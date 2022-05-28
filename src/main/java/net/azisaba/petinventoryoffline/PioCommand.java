@@ -5,6 +5,7 @@ import de.Keyle.MyPet.api.entity.MyPet;
 import de.Keyle.MyPet.api.entity.StoredMyPet;
 import de.Keyle.MyPet.api.player.MyPetPlayer;
 import de.Keyle.MyPet.api.repository.RepositoryCallback;
+import de.Keyle.MyPet.api.skill.skills.Backpack;
 import de.Keyle.MyPet.api.skill.skilltree.Skill;
 import de.Keyle.MyPet.api.util.NBTStorage;
 import net.azisaba.petinventoryoffline.mypet.MyPetClass;
@@ -31,6 +32,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PioCommand implements TabExecutor {
+    private final PetInventoryOffline plugin;
+
+    public PioCommand(@NotNull PetInventoryOffline plugin) {
+        this.plugin = plugin;
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player)) {
@@ -88,15 +95,22 @@ public class PioCommand implements TabExecutor {
             }).start();
             return true;
         }
-        MyPetApi.getRepository().getMyPet(uuid, new RepositoryCallback<StoredMyPet>() {
-            @Override
-            public void callback(StoredMyPet storedMyPet) {
-                if (storedMyPet == null) {
-                    sender.sendMessage(ChatColor.RED + "No pet found for UUID: " + args[0]);
-                    return;
-                }
+        new Thread(() -> {
+            StoredMyPet storedMyPet = MyPetApi.getRepository()
+                    .getAllMyPets()
+                    .stream()
+                    .filter(p -> p.getUUID().equals(uuid))
+                    .findFirst()
+                    .orElse(null);
+            if (storedMyPet == null) {
+                sender.sendMessage(ChatColor.RED + "No pet found for UUID: " + args[0]);
+                return;
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
                 MyPet myPet = MyPetClass.getByMyPetType(storedMyPet.getPetType()).getNewMyPetInstance(storedMyPet.getOwner());
                 myPet.setUUID(storedMyPet.getUUID());
+                myPet.setPetName(storedMyPet.getPetName());
+                myPet.setExp(storedMyPet.getExp());
                 myPet.setSkilltree(storedMyPet.getSkilltree());
                 TagCompound skillInfo = new TagCompound(MyPetUtil.getSkillInfo(storedMyPet));
                 Collection<Skill> skills = myPet.getSkills().all();
@@ -112,15 +126,21 @@ public class PioCommand implements TabExecutor {
                     }
                 }
                 try {
+                    sender.sendMessage(ChatColor.GREEN + "Opening inventory...");
                     //noinspection unchecked
                     Skill skill = myPet.getSkills().get((Class<? extends Skill>) Class.forName("de.Keyle.MyPet.skill.skills.BackpackImpl"));
                     //noinspection JavaReflectionInvocation
                     skill.getClass().getMethod("openInventory", Player.class).invoke(skill, sender);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    try {
+                        myPet.getSkills().get(Backpack.class).getInventory().open((Player) sender);
+                    } catch (Exception ex2) {
+                        ex2.addSuppressed(e);
+                        throw new RuntimeException(ex2);
+                    }
                 }
-            }
-        });
+            });
+        }).start();
         return true;
     }
 

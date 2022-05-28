@@ -9,6 +9,6 @@ public class PetInventoryOffline extends JavaPlugin {
     @Override
     public void onEnable() {
         Objects.requireNonNull(Bukkit.getPluginCommand("petinventoryoffline"))
-                .setExecutor(new PioCommand());
+                .setExecutor(new PioCommand(this));
     }
 }
