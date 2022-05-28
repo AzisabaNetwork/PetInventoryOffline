@@ -126,7 +126,6 @@ public class PioCommand implements TabExecutor {
                     }
                 }
                 try {
-                    sender.sendMessage(ChatColor.GREEN + "Opening inventory...");
                     //noinspection unchecked
                     Skill skill = myPet.getSkills().get((Class<? extends Skill>) Class.forName("de.Keyle.MyPet.skill.skills.BackpackImpl"));
                     //noinspection JavaReflectionInvocation
