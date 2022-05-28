@@ -46,7 +46,13 @@ public class PioCommand implements TabExecutor {
             uuid = UUID.fromString(args[0]);
         } catch (Exception e) {
             new Thread(() -> {
-                MyPetPlayer myPetPlayer = MyPetApi.getPlayerManager().getMyPetPlayer(args[0]);
+                MyPetPlayer myPetPlayer = MyPetApi.getRepository()
+                        .getAllMyPetPlayers()
+                        .stream()
+                        .filter(player -> player.getName().equalsIgnoreCase(args[0]))
+                        .findFirst()
+                        .orElse(null);
+                //MyPetPlayer myPetPlayer = MyPetApi.getPlayerManager().getMyPetPlayer(args[0]);
                 if (myPetPlayer == null) {
                     sender.sendMessage(ChatColor.RED + "Invalid player or uuid: " + args[0]);
                     return;
