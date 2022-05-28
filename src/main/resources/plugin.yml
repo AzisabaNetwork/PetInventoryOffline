@@ -1,0 +1,10 @@
+name: PetInventoryOffline
+main: net.azisaba.petinventoryoffline.PetInventoryOffline
+version: 1.0.0
+api-version: 1.15
+depend:
+  - MyPet
+commands:
+  petinventoryoffline:
+    permission: petinventoryoffline.command
+    aliases: ["pio", "pioffline"]
